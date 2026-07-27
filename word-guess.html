@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORDLY</title>
+<style>
+  :root{
+    --bg:#121213;
+    --tile-border:#3a3a3c;
+    --tile-border-filled:#565758;
+    --text:#f4f4f4;
+    --green:#6a9963;
+    --gold:#b8a33e;
+    --gray:#3a3a3c;
+    --key-bg:#818384;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:16px 8px 24px;
+    user-select:none;
+  }
+  header{
+    width:100%;
+    max-width:480px;
+    text-align:center;
+    border-bottom:1px solid #3a3a3c;
+    padding-bottom:10px;
+    margin-bottom:20px;
+    position:relative;
+  }
+  h1{
+    font-size:2rem;
+    letter-spacing:0.15em;
+    margin:6px 0 0;
+    font-weight:800;
+  }
+  .subtitle{
+    font-size:0.7rem;
+    letter-spacing:0.2em;
+    color:#888;
+    text-transform:uppercase;
+  }
+  #newgame-btn{
+    position:absolute;
+    right:0;
+    top:6px;
+    background:none;
+    border:1px solid #565758;
+    color:var(--text);
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:0.7rem;
+    cursor:pointer;
+    letter-spacing:0.05em;
+  }
+  #newgame-btn:hover{ background:#2a2a2b; }
+
+  #board{
+    display:grid;
+    grid-template-rows:repeat(6, 1fr);
+    gap:6px;
+    margin-bottom:22px;
+    width:100%;
+    max-width:340px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:6px;
+  }
+  .tile{
+    aspect-ratio:1/1;
+    border:2px solid var(--tile-border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.8rem;
+    font-weight:700;
+    text-transform:uppercase;
+    border-radius:4px;
+    transition:transform 0.15s;
+    background:#121213;
+  }
+  .tile.filled{
+    border-color:var(--tile-border-filled);
+    animation:pop 0.1s ease;
+  }
+  .tile.green{ background:var(--green); border-color:var(--green); color:#fff; }
+  .tile.gold{ background:var(--gold); border-color:var(--gold); color:#fff; }
+  .tile.gray{ background:var(--gray); border-color:var(--gray); color:#fff; }
+  .tile.flip{ animation:flip 0.4s ease-in-out forwards; }
+
+  @keyframes pop{
+    0%{transform:scale(0.9);}
+    50%{transform:scale(1.05);}
+    100%{transform:scale(1);}
+  }
+  @keyframes flip{
+    0%{transform:rotateX(0deg);}
+    45%{transform:rotateX(90deg);}
+    55%{transform:rotateX(90deg);}
+    100%{transform:rotateX(0deg);}
+  }
+  .row.shake{ animation:shake 0.4s; }
+  @keyframes shake{
+    10%,90%{transform:translateX(-2px);}
+    20%,80%{transform:translateX(4px);}
+    30%,50%,70%{transform:translateX(-8px);}
+    40%,60%{transform:translateX(8px);}
+  }
+
+  #keyboard{
+    width:100%;
+    max-width:500px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .krow{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+  }
+  .key{
+    background:var(--key-bg);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:0;
+    height:48px;
+    flex:1;
+    max-width:40px;
+    font-size:0.85rem;
+    font-weight:700;
+    text-transform:uppercase;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background 0.1s;
+  }
+  .key:active{ opacity:0.7; }
+  .key.wide{ max-width:60px; font-size:0.65rem; }
+  .key.green{ background:var(--green); }
+  .key.gold{ background:var(--gold); }
+  .key.gray{ background:#3a3a3c; color:#888; }
+
+  #toast{
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#fff;
+    color:#121213;
+    padding:10px 18px;
+    border-radius:6px;
+    font-weight:700;
+    font-size:0.9rem;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.2s;
+    z-index:10;
+  }
+  #toast.show{ opacity:1; }
+
+  #modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+  }
+  #modal-overlay.show{ display:flex; }
+  #modal{
+    background:#1e1e1f;
+    border-radius:10px;
+    padding:24px 28px;
+    text-align:center;
+    max-width:320px;
+    border:1px solid #3a3a3c;
+  }
+  #modal h2{ margin:0 0 8px; letter-spacing:0.05em; }
+  #modal p{ color:#ccc; font-size:0.9rem; margin:4px 0 16px; }
+  #modal-word{ color:var(--green); font-weight:800; letter-spacing:0.1em; }
+  #modal button{
+    background:var(--green);
+    border:none;
+    color:#fff;
+    padding:10px 20px;
+    border-radius:6px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:0.85rem;
+    letter-spacing:0.05em;
+  }
+
+  /* confetti */
+  .confetti-piece{
+    position:fixed;
+    width:8px;
+    height:8px;
+    border-radius:2px;
+    pointer-events:none;
+    z-index:30;
+    animation:confettiFall 1.2s ease-out forwards;
+  }
+  @keyframes confettiFall{
+    0%{ transform:translateY(0) rotate(0deg) scale(1); opacity:1; }
+    100%{ transform:translateY(105vh) rotate(720deg) scale(0.3); opacity:0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" style="position:absolute;left:0;top:8px;color:#888;text-decoration:none;font-size:0.7rem;letter-spacing:0.05em;">← ZEAXTH</a>
+  <div class="subtitle">Guess the word</div>
+  <h1>WORDLY</h1>
+  <button id="newgame-btn">NEW GAME</button>
+</header>
+
+<div id="board"></div>
+
+<div id="keyboard"></div>
+
+<div id="toast"></div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title"></h2>
+    <p id="modal-sub">The word was <span id="modal-word"></span></p>
+    <button id="modal-btn">PLAY AGAIN</button>
+  </div>
+</div>
+
+<script>
+const WORDS = [
+  "GRAPE","BRAVE","TRACE","WALES","STONE","PLANE","CRANE","SHINE","BLAZE","FLAME",
+  "PRIDE","CLOUD","STORM","RIVER","LIGHT","NIGHT","SOUND","EARTH","GHOST","MAGIC",
+  "PIANO","TIGER","EAGLE","OCEAN","MOUNT","FIELD","BRICK","GLASS","PAPER","METAL",
+  "CHESS","QUEEN","WOMAN","CHILD","HOUSE","MOUSE","HORSE","SHEEP","PLANT","FRUIT",
+  "JUICE","BREAD","SUGAR","SALAD","STEAK","PIZZA","CANDY","CHAIR","TABLE","COUCH",
+  "BEACH","WATER","SPACE","ROBOT","LASER","SWORD","SHARK","WHALE","PANDA","ZEBRA",
+  "MONEY","BONUS","TRUST","POWER","MOVIE","MUSIC","DANCE","SMILE","LAUGH","HAPPY",
+  "ANGER","PEACE","DREAM","SLEEP","AWAKE","BRAIN","HEART","BLOOD","BONES","SKULL",
+  "STORY","NOVEL","WORDS","BOOKS","PAGES","TREND",
+  "CRAFT","BUILD","MAKER","TRADE","FOCUS","SHARP","QUICK","SWIFT","LEVEL","STAGE"
+];
+
+const ROWS = 6;
+const WORD_LEN = 5;
+let answer = "";
+let currentRow = 0;
+let currentGuess = "";
+let gameOver = false;
+let keyStates = {};
+
+const board = document.getElementById('board');
+const keyboard = document.getElementById('keyboard');
+const toast = document.getElementById('toast');
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalWord = document.getElementById('modal-word');
+const modalBtn = document.getElementById('modal-btn');
+const newGameBtn = document.getElementById('newgame-btn');
+
+const KEY_ROWS = [
+  ['Q','W','E','R','T','Y','U','I','O','P'],
+  ['A','S','D','F','G','H','J','K','L'],
+  ['ENTER','Z','X','C','V','B','N','M','⌫']
+];
+
+function initBoard(){
+  board.innerHTML = "";
+  for(let r=0;r<ROWS;r++){
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.id = 'row-'+r;
+    for(let c=0;c<WORD_LEN;c++){
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.id = 'tile-'+r+'-'+c;
+      row.appendChild(tile);
+    }
+    board.appendChild(row);
+  }
+}
+
+function initKeyboard(){
+  keyboard.innerHTML = "";
+  KEY_ROWS.forEach(rowKeys=>{
+    const krow = document.createElement('div');
+    krow.className = 'krow';
+    rowKeys.forEach(k=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'key' + (k.length>1?' wide':'');
+      btn.textContent = k;
+      btn.id = 'key-'+k;
+      // pointerdown fires reliably on both mouse click and touch tap
+      btn.addEventListener('pointerdown', (e)=>{
+        e.preventDefault();
+        handleKey(k);
+      });
+      krow.appendChild(btn);
+    });
+    keyboard.appendChild(krow);
+  });
+}
+
+function newGame(){
+  answer = WORDS[Math.floor(Math.random()*WORDS.length)];
+  currentRow = 0;
+  currentGuess = "";
+  gameOver = false;
+  keyStates = {};
+  initBoard();
+  document.querySelectorAll('.key').forEach(k=>{
+    k.classList.remove('green','gold','gray');
+  });
+  modalOverlay.classList.remove('show');
+}
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 1200);
+}
+
+function shakeRow(r){
+  const row = document.getElementById('row-'+r);
+  row.classList.add('shake');
+  setTimeout(()=>row.classList.remove('shake'), 400);
+}
+
+function handleKey(k){
+  if(gameOver) return;
+  if(k === 'ENTER'){
+    submitGuess();
+  } else if(k === '⌫' || k === 'BACKSPACE'){
+    currentGuess = currentGuess.slice(0,-1);
+    updateRow();
+  } else if(/^[A-Z]$/.test(k) && currentGuess.length < WORD_LEN){
+    currentGuess += k;
+    updateRow();
+  }
+}
+
+function updateRow(){
+  for(let c=0;c<WORD_LEN;c++){
+    const tile = document.getElementById('tile-'+currentRow+'-'+c);
+    const letter = currentGuess[c] || "";
+    tile.textContent = letter;
+    tile.classList.toggle('filled', !!letter);
+  }
+}
+
+function submitGuess(){
+  if(currentGuess.length < WORD_LEN){
+    showToast("Not enough letters");
+    shakeRow(currentRow);
+    return;
+  }
+  const guess = currentGuess;
+  const result = scoreGuess(guess, answer);
+
+  result.forEach((state, i)=>{
+    const tile = document.getElementById('tile-'+currentRow+'-'+i);
+    setTimeout(()=>{
+      tile.classList.add(state);
+    }, i*150);
+  });
+
+  // update keyboard colors after reveal
+  setTimeout(()=>{
+    result.forEach((state, i)=>{
+      const letter = guess[i];
+      const rank = {gray:0, gold:1, green:2};
+      if(!keyStates[letter] || rank[state] > rank[keyStates[letter]]){
+        keyStates[letter] = state;
+        const keyEl = document.getElementById('key-'+letter);
+        if(keyEl){
+          keyEl.classList.remove('green','gold','gray');
+          keyEl.classList.add(state);
+        }
+      }
+    });
+
+    if(guess === answer){
+      endGame(true);
+    } else if(currentRow === ROWS-1){
+      endGame(false);
+    } else {
+      currentRow++;
+      currentGuess = "";
+    }
+  }, WORD_LEN*150 + 100);
+}
+
+function scoreGuess(guess, answer){
+  const result = new Array(WORD_LEN).fill('gray');
+  const answerArr = answer.split('');
+  const used = new Array(WORD_LEN).fill(false);
+
+  // greens first
+  for(let i=0;i<WORD_LEN;i++){
+    if(guess[i] === answerArr[i]){
+      result[i] = 'green';
+      used[i] = true;
+    }
+  }
+  // golds
+  for(let i=0;i<WORD_LEN;i++){
+    if(result[i] === 'green') continue;
+    let found = false;
+    for(let j=0;j<WORD_LEN;j++){
+      if(!used[j] && guess[i] === answerArr[j]){
+        used[j] = true;
+        found = true;
+        break;
+      }
+    }
+    if(found) result[i] = 'gold';
+  }
+  return result;
+}
+
+function spawnConfetti(){
+  const colors = ['#6a9963','#b8a33e','#818384','#f4f4f4','#538d4e','#c9b458'];
+  for(let i=0;i<40;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random()*100+'%';
+    piece.style.top = -(Math.random()*20+10)+'px';
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.animationDelay = Math.random()*0.4+'s';
+    piece.style.animationDuration = (Math.random()*0.8+1)+'s';
+    piece.style.width = (Math.random()*6+4)+'px';
+    piece.style.height = (Math.random()*6+4)+'px';
+    document.body.appendChild(piece);
+    setTimeout(()=>piece.remove(), 1600);
+  }
+}
+
+function endGame(won){
+  gameOver = true;
+  if(won) spawnConfetti();
+  setTimeout(()=>{
+    modalTitle.textContent = won ? "SPLENDID!" : "NICE TRY";
+    modalWord.textContent = answer;
+    modalOverlay.classList.add('show');
+  }, 600);
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(gameOver) return;
+  let k = e.key.toUpperCase();
+  if(k === 'BACKSPACE') k = '⌫';
+  if(k === 'ENTER' || k === '⌫' || /^[A-Z]$/.test(k)){
+    e.preventDefault();
+    handleKey(k);
+  }
+});
+
+// keep focus on the page so physical keyboard presses are always caught,
+// even inside an iframe preview
+document.body.tabIndex = -1;
+document.body.style.outline = 'none';
+window.addEventListener('load', ()=>document.body.focus());
+document.addEventListener('click', ()=>document.body.focus());
+
+modalBtn.addEventListener('click', newGame);
+newGameBtn.addEventListener('click', newGame);
+
+initKeyboard();
+newGame();
+</script>
+</body>
+</html>
