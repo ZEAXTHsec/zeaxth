@@ -93,6 +93,63 @@
     #newgame-btn{ font-size:0.6rem; padding:6px 8px; bottom:10px; }
   }
 
+  /* ── Stats bar ── */
+  #stats-bar{
+    width:100%;
+    max-width:480px;
+    display:flex;
+    justify-content:center;
+    gap:28px;
+    margin-bottom:14px;
+    font-size:0.7rem;
+  }
+  .stat-item{
+    text-align:center;
+  }
+  .stat-val{
+    font-size:1.3rem;
+    font-weight:800;
+    letter-spacing:0.03em;
+  }
+  .stat-label{
+    font-size:0.6rem;
+    color:#888;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin-top:1px;
+  }
+
+  /* ── Timer & Hint row ── */
+  #info-row{
+    width:100%;
+    max-width:340px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    padding:0 4px;
+  }
+  #timer{
+    font-size:0.75rem;
+    color:#888;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.04em;
+  }
+  #hint-btn{
+    background:none;
+    border:1px solid #565758;
+    color:#ccc;
+    border-radius:14px;
+    padding:5px 14px;
+    font-size:0.65rem;
+    cursor:pointer;
+    letter-spacing:0.04em;
+    -webkit-tap-highlight-color:transparent;
+    transition:all 0.15s;
+  }
+  #hint-btn:hover{ background:#2a2a2b; color:#fff; }
+  #hint-btn.used{ opacity:0.35; pointer-events:none; border-color:#3a3a3c; }
+
   #board{
     display:grid;
     grid-template-rows:repeat(6, 1fr);
@@ -249,6 +306,102 @@
     -webkit-tap-highlight-color:transparent;
   }
 
+  /* ── Stats Modal ── */
+  #stats-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:25;
+  }
+  #stats-overlay.show{ display:flex; }
+  #stats-modal{
+    background:#1e1e1f;
+    border-radius:12px;
+    padding:28px 24px 20px;
+    text-align:center;
+    max-width:380px;
+    width:92vw;
+    border:1px solid #3a3a3c;
+    position:relative;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  #stats-close{
+    position:absolute;
+    right:14px;
+    top:10px;
+    background:none;
+    border:none;
+    color:#888;
+    font-size:1.3rem;
+    cursor:pointer;
+    padding:6px 10px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #stats-modal h3{
+    margin:0 0 16px;
+    letter-spacing:0.06em;
+    font-size:1rem;
+  }
+  #stats-modal .stats-row{
+    display:flex;
+    justify-content:center;
+    gap:24px;
+    margin-bottom:18px;
+  }
+  #stats-modal .stat-item .stat-val{ font-size:1.6rem; }
+
+  /* distribution */
+  .dist-title{
+    font-size:0.7rem;
+    font-weight:700;
+    letter-spacing:0.08em;
+    margin-bottom:10px;
+    text-transform:uppercase;
+  }
+  .dist-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:4px;
+    font-size:0.75rem;
+  }
+  .dist-label{ width:16px; text-align:right; color:#888; }
+  .dist-bar{
+    flex:1;
+    height:22px;
+    background:var(--green);
+    border-radius:3px;
+    min-width:20px;
+    display:flex;
+    align-items:center;
+    padding-left:8px;
+    font-size:0.65rem;
+    font-weight:700;
+    transition:width 0.4s ease;
+  }
+  .dist-bar.zero{ background:#3a3a3c; color:#888; }
+
+  /* share btn */
+  #share-btn{
+    background:#538d4e;
+    border:none;
+    color:#fff;
+    padding:12px 28px;
+    border-radius:20px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:0.8rem;
+    letter-spacing:0.05em;
+    margin-top:6px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #share-btn:active{ opacity:0.8; }
+  #share-btn.copied{ background:#3a3a3c; }
+
   /* confetti */
   .confetti-piece{
     position:fixed;
@@ -276,6 +429,18 @@
   <button id="newgame-btn">NEW GAME</button>
 </header>
 
+<div id="stats-bar">
+  <div class="stat-item"><div class="stat-val" id="stat-played">0</div><div class="stat-label">Played</div></div>
+  <div class="stat-item"><div class="stat-val" id="stat-winpc">—</div><div class="stat-label">Win %</div></div>
+  <div class="stat-item"><div class="stat-val" id="stat-streak">0</div><div class="stat-label">Streak</div></div>
+  <div class="stat-item"><div class="stat-val" id="stat-maxstreak">0</div><div class="stat-label">Max</div></div>
+</div>
+
+<div id="info-row">
+  <div id="timer">00:00</div>
+  <button id="hint-btn">💡 Hint</button>
+</div>
+
 <div id="board"></div>
 
 <div id="keyboard"></div>
@@ -286,7 +451,23 @@
   <div id="modal">
     <h2 id="modal-title"></h2>
     <p id="modal-sub">The word was <span id="modal-word"></span></p>
-    <button id="modal-btn">PLAY AGAIN</button>
+    <button id="share-btn">📋 Share</button>
+    <button id="modal-btn" style="margin-top:6px;">PLAY AGAIN</button>
+  </div>
+</div>
+
+<div id="stats-overlay">
+  <div id="stats-modal">
+    <button id="stats-close">✕</button>
+    <h3>📊 STATISTICS</h3>
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-val" id="m-played">0</div><div class="stat-label">Played</div></div>
+      <div class="stat-item"><div class="stat-val" id="m-winpc">—</div><div class="stat-label">Win %</div></div>
+      <div class="stat-item"><div class="stat-val" id="m-streak">0</div><div class="stat-label">Streak</div></div>
+      <div class="stat-item"><div class="stat-val" id="m-max">0</div><div class="stat-label">Max</div></div>
+    </div>
+    <div class="dist-title">Guess Distribution</div>
+    <div id="dist-container"></div>
   </div>
 </div>
 
@@ -304,6 +485,33 @@ const WORDS = [
   "CRAFT","BUILD","MAKER","TRADE","FOCUS","SHARP","QUICK","SWIFT","LEVEL","STAGE"
 ];
 
+// ── Daily word (same for everyone each day) ──
+function getDailyWord(){
+  const now = new Date();
+  const seed = now.getFullYear()*10000 + (now.getMonth()+1)*100 + now.getDate();
+  let hash = 0;
+  const s = String(seed);
+  for(let i=0;i<s.length;i++){ hash = ((hash<<5)-hash)+s.charCodeAt(i); hash |= 0; }
+  return WORDS[Math.abs(hash) % WORDS.length];
+}
+
+// ── Stats persistence ──
+const STATS_KEY = 'wordly_stats_v1';
+function loadStats(){
+  try{
+    const raw = localStorage.getItem(STATS_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { played:0, wins:0, streak:0, maxStreak:0, dist:[0,0,0,0,0,0], lastDate:'' };
+}
+function saveStats(s){ localStorage.setItem(STATS_KEY, JSON.stringify(s)); }
+
+let stats = loadStats();
+let hintUsed = false;
+let timerSec = 0;
+let timerInterval = null;
+let lastGuessResults = null; // for share
+
 const ROWS = 6;
 const WORD_LEN = 5;
 let answer = "";
@@ -320,12 +528,59 @@ const modalTitle = document.getElementById('modal-title');
 const modalWord = document.getElementById('modal-word');
 const modalBtn = document.getElementById('modal-btn');
 const newGameBtn = document.getElementById('newgame-btn');
+const shareBtn = document.getElementById('share-btn');
+const statsOverlay = document.getElementById('stats-overlay');
+const statsClose = document.getElementById('stats-close');
+const hintBtn = document.getElementById('hint-btn');
+const timerEl = document.getElementById('timer');
+const distContainer = document.getElementById('dist-container');
 
 const KEY_ROWS = [
   ['Q','W','E','R','T','Y','U','I','O','P'],
   ['A','S','D','F','G','H','J','K','L'],
   ['ENTER','Z','X','C','V','B','N','M','⌫']
 ];
+
+function startTimer(){
+  timerSec = 0;
+  updateTimer();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{ timerSec++; updateTimer(); }, 1000);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+function updateTimer(){
+  const m = Math.floor(timerSec/60);
+  const s = timerSec%60;
+  timerEl.textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function updateStatsBar(){
+  document.getElementById('stat-played').textContent = stats.played;
+  const winpc = stats.played>0 ? Math.round(stats.wins/stats.played*100) : null;
+  document.getElementById('stat-winpc').textContent = winpc!==null ? winpc+'%' : '—';
+  document.getElementById('stat-streak').textContent = stats.streak;
+  document.getElementById('stat-maxstreak').textContent = stats.maxStreak;
+}
+
+function buildDistBars(){
+  const max = Math.max(1, ...stats.dist);
+  distContainer.innerHTML = stats.dist.map((n,i)=>{
+    const w = Math.round(n/max*100);
+    return '<div class="dist-row"><span class="dist-label">'+(i+1)+'</span>'+
+      '<div class="dist-bar'+(n===0?' zero':'')+'" style="width:'+(w||5)+'%">'+
+      (n>0?n:'')+'</div></div>';
+  }).join('');
+}
+
+function showStats(){
+  document.getElementById('m-played').textContent = stats.played;
+  const wp = stats.played>0 ? Math.round(stats.wins/stats.played*100)+'%' : '—';
+  document.getElementById('m-winpc').textContent = wp;
+  document.getElementById('m-streak').textContent = stats.streak;
+  document.getElementById('m-max').textContent = stats.maxStreak;
+  buildDistBars();
+  statsOverlay.classList.add('show');
+}
 
 function initBoard(){
   board.innerHTML = "";
@@ -366,16 +621,25 @@ function initKeyboard(){
 }
 
 function newGame(){
-  answer = WORDS[Math.floor(Math.random()*WORDS.length)];
+  answer = getDailyWord();
   currentRow = 0;
   currentGuess = "";
   gameOver = false;
   keyStates = {};
+  hintUsed = false;
+  lastGuessResults = null;
+  hintBtn.classList.remove('used');
+  hintBtn.textContent = '💡 Hint';
   initBoard();
   document.querySelectorAll('.key').forEach(k=>{
     k.classList.remove('green','gold','gray');
   });
   modalOverlay.classList.remove('show');
+  statsOverlay.classList.remove('show');
+  shareBtn.classList.remove('copied');
+  shareBtn.textContent = '📋 Share';
+  updateStatsBar();
+  startTimer();
 }
 
 function showToast(msg){
@@ -388,6 +652,29 @@ function shakeRow(r){
   const row = document.getElementById('row-'+r);
   row.classList.add('shake');
   setTimeout(()=>row.classList.remove('shake'), 400);
+}
+
+function useHint(){
+  if(hintUsed || gameOver) return;
+  hintUsed = true;
+  hintBtn.classList.add('used');
+  hintBtn.textContent = '💡 Used';
+  // reveal one unrevealed green position
+  const candidates = [];
+  for(let i=0;i<WORD_LEN;i++){
+    const tile = document.getElementById('tile-'+currentRow+'-'+i);
+    if(!tile.classList.contains('green')) candidates.push(i);
+  }
+  if(!candidates.length) return;
+  const pick = candidates[Math.floor(Math.random()*candidates.length)];
+  const tile = document.getElementById('tile-'+currentRow+'-'+pick);
+  tile.textContent = answer[pick];
+  tile.classList.add('filled','green');
+  // also update keyStates so the keyboard colors reflect it
+  const letter = answer[pick];
+  keyStates[letter] = 'green';
+  const keyEl = document.getElementById('key-'+letter);
+  if(keyEl){ keyEl.classList.remove('green','gold','gray'); keyEl.classList.add('green'); }
 }
 
 function handleKey(k){
@@ -420,6 +707,10 @@ function submitGuess(){
   }
   const guess = currentGuess;
   const result = scoreGuess(guess, answer);
+
+  // store result for share
+  if(!lastGuessResults) lastGuessResults = [];
+  lastGuessResults.push(result);
 
   result.forEach((state, i)=>{
     const tile = document.getElementById('tile-'+currentRow+'-'+i);
@@ -499,12 +790,67 @@ function spawnConfetti(){
   }
 }
 
+function shareResults(){
+  const emoji = {green:'🟩', gold:'🟨', gray:'⬛'};
+  const now = new Date();
+  const dateStr = (now.getMonth()+1)+'/'+now.getDate();
+  const guessCount = lastGuessResults ? lastGuessResults.length : '?';
+  const lines = ['WORDLY 📆 '+dateStr+' '+(wonLast?'✅':'❌')+' '+guessCount+'/6'];
+  if(lastGuessResults){
+    lastGuessResults.forEach(r => lines.push(r.map(s=>emoji[s]).join('')));
+  }
+  const text = lines.join('\n');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      shareBtn.textContent = '✅ Copied!';
+      shareBtn.classList.add('copied');
+    }).catch(()=>{});
+  } else {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    shareBtn.textContent = '✅ Copied!';
+    shareBtn.classList.add('copied');
+  }
+}
+
+let wonLast = false;
+
 function endGame(won){
   gameOver = true;
+  wonLast = won;
+  stopTimer();
   if(won) spawnConfetti();
+
+  // update stats (only count once per day)
+  const today = new Date().toDateString();
+  if(stats.lastDate !== today){
+    stats.played++;
+    if(won){
+      stats.wins++;
+      stats.streak++;
+      if(stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
+      const guessCount = lastGuessResults ? lastGuessResults.length : 6;
+      if(guessCount>=1 && guessCount<=6) stats.dist[guessCount-1]++;
+    } else {
+      stats.streak = 0;
+    }
+    stats.lastDate = today;
+    saveStats(stats);
+    updateStatsBar();
+  }
+
   setTimeout(()=>{
     modalTitle.textContent = won ? "SPLENDID!" : "NICE TRY";
     modalWord.textContent = answer;
+    shareBtn.classList.remove('copied');
+    shareBtn.textContent = '📋 Share';
     modalOverlay.classList.add('show');
   }, 600);
 }
@@ -529,7 +875,23 @@ document.addEventListener('click', ()=>document.body.focus());
 modalBtn.addEventListener('click', newGame);
 newGameBtn.addEventListener('click', newGame);
 
+shareBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  shareResults();
+});
+
+hintBtn.addEventListener('click', useHint);
+
+// open stats modal when tapping stats bar
+document.getElementById('stats-bar').addEventListener('click', showStats);
+statsClose.addEventListener('click', ()=>statsOverlay.classList.remove('show'));
+statsOverlay.addEventListener('click', (e)=>{
+  if(e.target === statsOverlay) statsOverlay.classList.remove('show');
+});
+
+updateStatsBar();
 initKeyboard();
+startTimer();
 newGame();
 </script>
 </body>
